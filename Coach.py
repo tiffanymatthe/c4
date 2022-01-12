@@ -169,9 +169,9 @@ class Coach():
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            # training data is already being generated through multiprocessing, no need to do this as well
-            # unless all training data has finished generating before this
-            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, config=None)
+            # more multiprocessing, not efficient in beginning but for most of it yes because
+            # neural network takes longer and longer to fit.
+            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, config=self.config)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                      (nwins, pwins, draws))

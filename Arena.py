@@ -3,6 +3,32 @@ from Game import Game
 from tqdm import tqdm
 from multiprocessing import Pool
 
+def playGameAsync(player1: int, player2: int):
+    """
+    Executes one episode of a game.
+    Returns:
+        either
+            winner: player who won the game (1 if player1, -1 if player2)
+        or
+            draw result returned from the game that is neither 1, -1, nor 0.
+    """
+    players = [player2, None, player1]
+    curPlayer = 1
+    game = Game()
+    board = game.getInitBoard()
+    it = 0
+    while game.getWinState(board, curPlayer) == 0:
+        it += 1
+        action = players[curPlayer + 1](game.getCanonicalForm(board, curPlayer))
+        valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer))
+
+        if valids[action] == 0:
+            print(f'Action {action} is not valid!')
+            print(f'valids = {valids}')
+            assert valids[action] > 0
+        board, curPlayer = game.getNextState(board, curPlayer, action)
+    return curPlayer * game.getWinState(board, curPlayer)
+
 class Arena():
     """
     An Arena class where any 2 agents can be pit against each other.
@@ -90,7 +116,7 @@ class Arena():
 
             pool = Pool(config.processes)
             for _ in range(num):
-                pool.apply_async(self.playGame, args=(verbose,), callback=update)
+                pool.apply_async(playGameAsync, args=(self.player1, self.player2,), callback=update)
             pool.close()
             pool.join()
         else:

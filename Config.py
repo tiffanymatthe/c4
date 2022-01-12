@@ -21,8 +21,8 @@ class Config():
 
         self.arenaCompare = 40
         self.updateThreshold = 0.6
-        self.load_folder_file = ('/models', 'v1')
-        self.load_model = False
+        self.load_folder_file = ('/temp', 'checkpoint_15.pth.tar')
+        self.load_model = True
         self.numItersForTrainExamplesHistory = 20
 
         self.multiprocessing = True
