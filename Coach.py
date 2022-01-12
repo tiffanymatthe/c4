@@ -120,34 +120,20 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
+        if not self.skipFirstSelfPlay and self.config.multiprocessing:
+            iterationTrainExamples, pool = self.generateTrainingDataAsync()
 
         for i in range(1, self.config.numIters + 1):
             # bookkeeping
             print(f'Starting Iter #{i} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
-                iterationTrainExamples = deque(
-                    [], maxlen=self.config.maxlenOfQueue)
-
                 if self.config.multiprocessing:
-                    print("Starting multiprocessing.")
-                    pbar = tqdm(total=self.config.numEps, desc="Self Play", position=0, leave=True)
-
-                    def update(result):
-                        nonlocal iterationTrainExamples
-                        iterationTrainExamples += result
-                        pbar.update()
-
-                    pool = Pool(self.config.processes)
-                    for _ in range(self.config.numEps):
-                        pool.apply_async(executeEpisodeProcess, callback=update)
+                    # data is already generating, just need to wait until it is done
                     pool.close()
                     pool.join()
                 else:
-                    for _ in tqdm(range(self.config.numEps), desc="Self Play"):
-                        # reset search tree
-                        self.mcts = MCTS(self.game, self.nnet, self.config)
-                        iterationTrainExamples += self.executeEpisode()
+                    iterationTrainExamples = self.generateTrainingData()
 
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
@@ -173,13 +159,19 @@ class Coach():
                 folder=self.config.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(self.game, self.pnet, self.config)
 
+            if self.config.multiprocessing and i < self.config.numIters:
+                # start generating data for next iteration
+                iterationTrainExamples, pool = self.generateTrainingDataAsync()
+
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.config)
 
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, config=self.config)
+            # training data is already being generated through multiprocessing, no need to do this as well
+            # unless all training data has finished generating before this
+            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, config=None)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                      (nwins, pwins, draws))
@@ -193,6 +185,39 @@ class Coach():
                     folder=self.config.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(
                     folder=self.config.checkpoint, filename='best.pth.tar')
+
+    def generateTrainingData(self):
+        iterationTrainExamples = deque(
+                    [], maxlen=self.config.maxlenOfQueue)
+
+        for _ in tqdm(range(self.config.numEps), desc="Self Play"):
+            # reset search tree
+            self.mcts = MCTS(self.game, self.nnet, self.config)
+            iterationTrainExamples += self.executeEpisode()
+
+        return iterationTrainExamples
+
+    def generateTrainingDataAsync(self):
+        """Generates training data through multiprocessing.
+        Returns object that stores examples (only access after pool is joined and closed) and multiprocessing pool."""
+        iterationTrainExamples = deque(
+                    [], maxlen=self.config.maxlenOfQueue)
+
+        if self.config.multiprocessing:
+            print("Starting multiprocessing.")
+            pbar = tqdm(total=self.config.numEps, desc="Self Play", position=0, leave=True)
+
+            def update(result):
+                nonlocal iterationTrainExamples
+                iterationTrainExamples += result
+                pbar.update()
+
+            pool = Pool(self.config.processes)
+            for _ in range(self.config.numEps):
+                pool.apply_async(executeEpisodeProcess, callback=update)
+
+        return iterationTrainExamples, pool
+
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
