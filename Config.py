@@ -3,7 +3,7 @@
 class Config():
     def __init__(self) -> None:
         self.numMCTSSims = 25
-        self.cpuct = 1 # 2.5
+        self.cpuct = 2.5 # 1
 
         self.numEps = 100 # 100
         self.numIters = 32
