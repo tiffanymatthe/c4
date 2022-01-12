@@ -5,7 +5,7 @@ class Config():
         self.numMCTSSims = 25
         self.cpuct = 2.5 # 1
 
-        self.numEps = 100 # 100
+        self.numEps = 100
         self.numIters = 32
         self.maxlenOfQueue = 200000
 
@@ -19,7 +19,7 @@ class Config():
         self.tempThreshold = 15
         self.checkpoint = './temp/'
 
-        self.arenaCompare = 40 # 40
+        self.arenaCompare = 40
         self.updateThreshold = 0.6
         self.load_folder_file = ('/models', 'v1')
         self.load_model = False

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from Game import Game
 from tqdm import tqdm
+from multiprocessing import Pool
 
 class Arena():
     """
@@ -57,10 +58,11 @@ class Arena():
             self.display(board)
         return curPlayer * self.game.getWinState(board, curPlayer)
 
-    def playGames(self, num, verbose=False):
+    def playGames(self, num, verbose=False, config=None):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
+        If config is None, no multiprocessing.
         Returns:
             oneWon: games won by player1
             twoWon: games won by player2
@@ -71,24 +73,66 @@ class Arena():
         oneWon = 0
         twoWon = 0
         draws = 0
-        for _ in tqdm(range(num), desc="Arena.playGames (1)"):
-            gameResult = self.playGame(verbose=verbose)
-            if gameResult == 1:
-                oneWon += 1
-            elif gameResult == -1:
-                twoWon += 1
-            else:
-                draws += 1
+        if config and config.multiprocessing:
+            pbar = tqdm(total=num, desc="Arena.playGames (1)", position=0, leave=True)
+
+            def update(result):
+                if result == 1:
+                    nonlocal oneWon
+                    oneWon += 1
+                elif result == -1:
+                    nonlocal twoWon
+                    twoWon += 1
+                else:
+                    nonlocal draws
+                    draws += 1
+                pbar.update()
+
+            pool = Pool(config.processes)
+            for _ in range(num):
+                pool.apply_async(self.playGame, args=(verbose,), callback=update)
+            pool.close()
+            pool.join()
+        else:
+            for _ in tqdm(range(num), desc="Arena.playGames (1)"):
+                gameResult = self.playGame(verbose=verbose)
+                if gameResult == 1:
+                    oneWon += 1
+                elif gameResult == -1:
+                    twoWon += 1
+                else:
+                    draws += 1
 
         self.player1, self.player2 = self.player2, self.player1
 
-        for _ in tqdm(range(num), desc="Arena.playGames (2)"):
-            gameResult = self.playGame(verbose=verbose)
-            if gameResult == -1:
-                oneWon += 1
-            elif gameResult == 1:
-                twoWon += 1
-            else:
-                draws += 1
+        if config and config.multiprocessing:
+            pbar = tqdm(total=num, desc="Arena.playGames (2)", position=0, leave=True)
+
+            def update(result):
+                if result == -1:
+                    nonlocal oneWon
+                    oneWon += 1
+                elif result == 1:
+                    nonlocal twoWon
+                    twoWon += 1
+                else:
+                    nonlocal draws
+                    draws += 1
+                pbar.update()
+
+            pool = Pool(config.processes)
+            for _ in range(num):
+                pool.apply_async(self.playGame, args=(verbose,), callback=update)
+            pool.close()
+            pool.join()
+        else:
+            for _ in tqdm(range(num), desc="Arena.playGames (2)"):
+                gameResult = self.playGame(verbose=verbose)
+                if gameResult == -1:
+                    oneWon += 1
+                elif gameResult == 1:
+                    twoWon += 1
+                else:
+                    draws += 1
 
         return oneWon, twoWon, draws

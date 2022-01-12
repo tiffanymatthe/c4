@@ -131,7 +131,7 @@ class Coach():
 
                 if self.config.multiprocessing:
                     print("Starting multiprocessing.")
-                    pbar = tqdm(total=self.config.numEps, desc="Self Play")
+                    pbar = tqdm(total=self.config.numEps, desc="Self Play", position=0, leave=True)
 
                     def update(result):
                         nonlocal iterationTrainExamples
@@ -179,7 +179,7 @@ class Coach():
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            pwins, nwins, draws = arena.playGames(self.config.arenaCompare)
+            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, multiprocessing=self.config.multiprogressing)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                      (nwins, pwins, draws))
