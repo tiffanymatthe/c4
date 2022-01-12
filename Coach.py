@@ -35,7 +35,7 @@ def executeEpisodeProcess():
     episodeStep = 0
     
     nnet = NeuralNet(game)
-    nnet.load_checkpoint(folder=config.checkpoint, filename='temp.pth.tar')
+    nnet.load_checkpoint(folder=config.checkpoint, filename='temp.pth.tar', suppress=True)
     mcts = MCTS(game, nnet, config)
 
     while True:
@@ -131,15 +131,18 @@ class Coach():
 
                 if self.config.multiprocessing:
                     print("Starting multiprocessing.")
-                    async_results = []
                     pbar = tqdm(total=self.config.numEps, desc="Self Play")
+
+                    def update(result):
+                        nonlocal iterationTrainExamples
+                        iterationTrainExamples += result
+                        pbar.update()
+
                     pool = Pool(self.config.processes)
                     for _ in range(self.config.numEps):
-                        async_results.append(pool.apply_async(executeEpisodeProcess, callback=pbar.update))
+                        pool.apply_async(executeEpisodeProcess, callback=update)
                     pool.close()
                     pool.join()
-                    for result in async_results:
-                        iterationTrainExamples += result.get()
                 else:
                     for _ in tqdm(range(self.config.numEps), desc="Self Play"):
                         # reset search tree

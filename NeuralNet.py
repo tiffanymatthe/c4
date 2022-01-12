@@ -64,10 +64,11 @@ class NeuralNet():
             print("Checkpoint Directory exists! ")
         self.nnet.model.save_weights(filepath)
 
-    def load_checkpoint(self, folder, filename):
+    def load_checkpoint(self, folder, filename, suppress=False):
         """
         Loads parameters of the neural network from folder/filename
         """
         filepath = os.path.join(folder, filename)
         self.nnet.model.load_weights(filepath)
-        print('Loading Weights...')
+        if not suppress:
+            print('Loading Weights...')
