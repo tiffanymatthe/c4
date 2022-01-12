@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 import tensorflow as tf
 from tensorflow.keras import Input
 from tensorflow.keras.models import *
@@ -67,6 +66,7 @@ def policy_head(input):
 
 class C4Model():
     def __init__(self, game: Game, config: Config):
+        print("in initialization")
         # game params
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
@@ -92,21 +92,7 @@ class C4Model():
         loss_pi_fn = tf.keras.losses.CategoricalCrossentropy(
             from_logits=True)
         loss_v_fn = tf.keras.losses.MeanSquaredError()
+        print("before model")
         self.model = Model(inputs=self.input_boards, outputs=[self.pi, self.v])
         self.model.compile(
             loss=[loss_pi_fn, loss_v_fn], optimizer=Adam(config.lr))
-
-    # def calculate_loss(self):
-    #     self.target_pis = Input(
-    #         dtype=tf.float32, shape=self.action_size)
-    #     self.target_vs = Input(dtype=tf.float32, shape=[None])
-    #     loss_pi_fn = tf.keras.losses.CategoricalCrossentropy(
-    #         from_logits=True)
-    #     self.loss_pi = loss_pi_fn(
-    #         y_true=self.target_pis, y_pred=self.pi)
-    #     loss_v_fn = tf.keras.losses.MeanSquaredError()
-    #     self.loss_v = loss_v_fn(
-    #         y_true=self.target_vs, y_pred=tf.reshape(self.v, shape=[-1, ]))
-    #     self.total_loss = self.loss_pi + self.loss_v
-    #     self.train_step = tf.keras.optimizers.Adam(
-    #             learning_rate=self.config.lr).minimize(self.total_loss, var_list=self.model.get_weights())

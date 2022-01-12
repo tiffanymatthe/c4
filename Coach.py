@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from re import L
 from Game import Game
 from NeuralNet import NeuralNet
 from Config import Config
@@ -11,6 +12,53 @@ from random import shuffle
 import os
 import sys
 from pickle import Pickler, Unpickler
+from multiprocessing import Pool
+
+def executeEpisodeProcess():
+    """
+    This function executes one episode of self-play, starting with player 1.
+    As the game is played, each turn is added as a training example to
+    trainExamples. The game is played till the game ends. After the game
+    ends, the outcome of the game is used to assign values to each example
+    in trainExamples.
+    It uses a temp=1 if episodeStep < tempThreshold, and thereafter
+    uses temp=0.
+    Returns:
+        trainExamples: a list of examples of the form (canonicalBoard, currPlayer, pi,v)
+                        pi is the MCTS informed policy vector, v is +1 if
+                        the player eventually won the game, else -1.
+    """
+    trainExamples = []
+    game = Game()
+    config = Config()
+    board = game.getInitBoard()
+    curPlayer = 1
+    episodeStep = 0
+    
+    nnet = NeuralNet(game)
+    nnet.load_checkpoint(folder=config.checkpoint, filename='temp.pth.tar')
+    mcts = MCTS(game, nnet, config)
+
+    while True:
+        episodeStep += 1
+        canonicalBoard = game.getCanonicalForm(board, curPlayer)
+        temp = int(episodeStep < config.tempThreshold)
+
+        pi = mcts.getActionProb(canonicalBoard, temp=temp)
+        sym = game.getSymmetries(canonicalBoard, pi)
+        for b, p in sym:
+            trainExamples.append([b, curPlayer, p, None])
+
+        action = np.random.choice(len(pi), p=pi)
+        board, curPlayer = game.getNextState(
+            board, curPlayer, action)
+
+        r = game.getWinState(board, curPlayer)
+
+        print("before returning")
+
+        if r != 0:
+            return [(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
 
 class Coach():
     """
@@ -84,10 +132,22 @@ class Coach():
                 iterationTrainExamples = deque(
                     [], maxlen=self.config.maxlenOfQueue)
 
-                for _ in tqdm(range(self.config.numEps), desc="Self Play"):
-                    # reset search tree
-                    self.mcts = MCTS(self.game, self.nnet, self.config)
-                    iterationTrainExamples += self.executeEpisode()
+                if self.config.multiprocessing:
+                    async_results = []
+                    pbar = tqdm(total=Config().numEps, desc="Self Play")
+                    pool = Pool(self.config.processes)
+                    for _ in range(self.config.numEps):
+                        self.mcts = MCTS(self.game, self.nnet, self.config)
+                        async_results.append(pool.apply_async(executeEpisodeProcess, callback=pbar.update))
+                    pool.close()
+                    pool.join()
+                    for result in async_results:
+                        iterationTrainExamples += result.get()
+                else:
+                    for _ in tqdm(range(self.config.numEps), desc="Self Play"):
+                        # reset search tree
+                        self.mcts = MCTS(self.game, self.nnet, self.config)
+                        iterationTrainExamples += self.executeEpisode()
 
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
