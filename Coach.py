@@ -13,6 +13,7 @@ import sys
 from pickle import Pickler, Unpickler
 from multiprocessing import Pool
 
+
 def executeEpisodeProcess():
     """
     This function executes one episode of self-play, starting with player 1.
@@ -33,9 +34,10 @@ def executeEpisodeProcess():
     board = game.getInitBoard()
     curPlayer = 1
     episodeStep = 0
-    
+
     nnet = NeuralNet(game)
-    nnet.load_checkpoint(folder=config.checkpoint, filename='temp.pth.tar', suppress=True)
+    nnet.load_checkpoint(folder=config.checkpoint,
+                         filename='temp.pth.tar', suppress=True)
     mcts = MCTS(game, nnet, config)
 
     while True:
@@ -56,6 +58,7 @@ def executeEpisodeProcess():
 
         if r != 0:
             return [(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
+
 
 class Coach():
     """
@@ -171,10 +174,11 @@ class Coach():
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             # more multiprocessing, not efficient in beginning but for most of it yes because
             # neural network takes longer and longer to fit.
-            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, config=self.config)
+            pwins, nwins, draws = arena.playGames(
+                self.config.arenaCompare, config=self.config)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
-                     (nwins, pwins, draws))
+                  (nwins, pwins, draws))
             if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.config.updateThreshold:
                 print('REJECTING NEW MODEL')
                 self.nnet.load_checkpoint(
@@ -188,7 +192,7 @@ class Coach():
 
     def generateTrainingData(self):
         iterationTrainExamples = deque(
-                    [], maxlen=self.config.maxlenOfQueue)
+            [], maxlen=self.config.maxlenOfQueue)
 
         for _ in tqdm(range(self.config.numEps), desc="Self Play"):
             # reset search tree
@@ -201,23 +205,24 @@ class Coach():
         """Generates training data through multiprocessing.
         Returns object that stores examples (only access after pool is joined and closed) and multiprocessing pool."""
         iterationTrainExamples = deque(
-                    [], maxlen=self.config.maxlenOfQueue)
+            [], maxlen=self.config.maxlenOfQueue)
 
         if self.config.multiprocessing:
             print("Starting multiprocessing.")
-            pbar = tqdm(total=self.config.numEps, desc="Self Play", position=0, leave=True)
+            pbar = tqdm(total=self.config.numEps,
+                        desc="Self Play", position=0, leave=True)
 
             def update(result):
                 nonlocal iterationTrainExamples
                 iterationTrainExamples += result
                 pbar.update()
 
-            pool = Pool(self.config.processes)
+            # leave one for network training
+            pool = Pool(self.config.processes - 1)
             for _ in range(self.config.numEps):
                 pool.apply_async(executeEpisodeProcess, callback=update)
 
         return iterationTrainExamples, pool
-
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
