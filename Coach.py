@@ -126,8 +126,13 @@ class Coach():
         if not self.skipFirstSelfPlay and self.config.multiprocessing:
             iterationTrainExamples, pool = self.generateTrainingDataAsync()
 
-        for i in range(1, self.config.numIters + 1):
+        startingIndex = 1
+        if self.config.checkpoint is not None:
+            startingIndex = min(self.config.checkpoint, self.config.numIters + 1)
+
+        for i in range(startingIndex, self.config.numIters + 1):
             # bookkeeping
+
             print(f'Starting Iter #{i} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
