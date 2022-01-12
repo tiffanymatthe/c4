@@ -179,7 +179,7 @@ class Coach():
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, multiprocessing=self.config.multiprogressing)
+            pwins, nwins, draws = arena.playGames(self.config.arenaCompare, config=self.config)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                      (nwins, pwins, draws))
