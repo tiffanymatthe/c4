@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from re import L
 from Game import Game
 from NeuralNet import NeuralNet
 from Config import Config
@@ -54,8 +53,6 @@ def executeEpisodeProcess():
             board, curPlayer, action)
 
         r = game.getWinState(board, curPlayer)
-
-        print("before returning")
 
         if r != 0:
             return [(x[0], x[2], r * ((-1) ** (x[1] != curPlayer))) for x in trainExamples]
@@ -133,11 +130,11 @@ class Coach():
                     [], maxlen=self.config.maxlenOfQueue)
 
                 if self.config.multiprocessing:
+                    print("Starting multiprocessing.")
                     async_results = []
-                    pbar = tqdm(total=Config().numEps, desc="Self Play")
+                    pbar = tqdm(total=self.config.numEps, desc="Self Play")
                     pool = Pool(self.config.processes)
                     for _ in range(self.config.numEps):
-                        self.mcts = MCTS(self.game, self.nnet, self.config)
                         async_results.append(pool.apply_async(executeEpisodeProcess, callback=pbar.update))
                     pool.close()
                     pool.join()

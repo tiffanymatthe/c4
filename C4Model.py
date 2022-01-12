@@ -1,5 +1,8 @@
 #!/usr/bin/python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.keras import Input
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import *
@@ -66,7 +69,6 @@ def policy_head(input):
 
 class C4Model():
     def __init__(self, game: Game, config: Config):
-        print("in initialization")
         # game params
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
@@ -92,7 +94,6 @@ class C4Model():
         loss_pi_fn = tf.keras.losses.CategoricalCrossentropy(
             from_logits=True)
         loss_v_fn = tf.keras.losses.MeanSquaredError()
-        print("before model")
         self.model = Model(inputs=self.input_boards, outputs=[self.pi, self.v])
         self.model.compile(
             loss=[loss_pi_fn, loss_v_fn], optimizer=Adam(config.lr))
