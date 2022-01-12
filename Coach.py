@@ -128,7 +128,7 @@ class Coach():
 
         startingIndex = 1
         if self.config.checkpoint is not None:
-            startingIndex = min(self.config.checkpoint, self.config.numIters + 1)
+            startingIndex = min(self.config.iterationNum, self.config.numIters + 1)
 
         for i in range(startingIndex, self.config.numIters + 1):
             # bookkeeping
