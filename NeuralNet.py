@@ -1,10 +1,13 @@
 #!/usr/bin/python
+import warnings
+warnings.filterwarnings("ignore")
 import os
 from C4Model import C4Model
 from Config import Config
 from Game import Game
 import numpy as np
 from Board import Board
+from tqdm import tqdm
 
 
 class NeuralNet():
@@ -34,8 +37,18 @@ class NeuralNet():
         input_boards = np.asarray(input_boards)
         target_pis = np.asarray(target_pis)
         target_vs = np.asarray(target_vs)
+
+        verbose = 1
+        if self.config.multiprocessing:
+            verbose = 2
+            tqdm.write("\033[92mTraining model with verbose=2.\033[0m.")
+
         self.nnet.model.fit(x=input_boards, y=[target_pis, target_vs],
-                            batch_size=self.config.batch_size, epochs=self.config.epochs)
+                            batch_size=self.config.batch_size, epochs=self.config.epochs,
+                            verbose=verbose)
+                            
+        if self.config.multiprocessing:
+            tqdm.write("\033[92mFinished training\033[0m.")
 
     def predict(self, board: Board):
         """

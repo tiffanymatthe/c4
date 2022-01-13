@@ -26,6 +26,6 @@ class Config():
         self.load_model = True
         self.numItersForTrainExamplesHistory = 20
 
-        self.multiprocessing = False
+        self.multiprocessing = True
         self.processes = 4
 

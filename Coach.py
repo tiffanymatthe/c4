@@ -123,11 +123,12 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
+        pool = None
         if not self.skipFirstSelfPlay and self.config.multiprocessing:
             iterationTrainExamples, pool = self.generateTrainingDataAsync()
 
         startingIndex = 1
-        if self.config.checkpoint is not None:
+        if self.config.iterationNum is not None:
             startingIndex = min(self.config.iterationNum, self.config.numIters + 1)
 
         for i in range(startingIndex, self.config.numIters + 1):
@@ -135,7 +136,7 @@ class Coach():
 
             print(f'Starting Iter #{i} ...')
             # examples of the iteration
-            if not self.skipFirstSelfPlay or i > 1:
+            if not self.skipFirstSelfPlay or i > startingIndex:
                 if self.config.multiprocessing:
                     # data is already generating, just need to wait until it is done
                     pool.close()
@@ -212,20 +213,19 @@ class Coach():
         iterationTrainExamples = deque(
             [], maxlen=self.config.maxlenOfQueue)
 
-        if self.config.multiprocessing:
-            print("Starting multiprocessing.")
-            pbar = tqdm(total=self.config.numEps,
-                        desc="Self Play", position=0, leave=True)
+        print("Starting multiprocessing.")
+        pbar = tqdm(total=self.config.numEps,
+                    desc="Self Play", position=0, leave=True)
 
-            def update(result):
-                nonlocal iterationTrainExamples
-                iterationTrainExamples += result
-                pbar.update()
+        def update(result):
+            nonlocal iterationTrainExamples
+            iterationTrainExamples += result
+            pbar.update()
 
-            # leave one for network training
-            pool = Pool(self.config.processes - 1)
-            for _ in range(self.config.numEps):
-                pool.apply_async(executeEpisodeProcess, callback=update)
+        # leave one for network training
+        pool = Pool(self.config.processes - 1)
+        for _ in range(self.config.numEps):
+            pool.apply_async(executeEpisodeProcess, callback=update)
 
         return iterationTrainExamples, pool
 
