@@ -173,8 +173,7 @@ class Coach():
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             # more multiprocessing, not efficient in beginning but for most of it yes because
             # neural network takes longer and longer to fit.
-            pwins, nwins, draws = arena.playGames(
-                self.config.arenaCompare)
+            pwins, nwins, draws = arena.playGames(self.config.arenaCompare)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                   (nwins, pwins, draws))
@@ -240,9 +239,10 @@ class Coach():
         examplesFile = modelFile + ".examples"
         if not os.path.isfile(examplesFile):
             print(f'File "{examplesFile}" with trainExamples not found!')
-            r = input("Continue? [y|n]")
+            r = input("Try with self.load_folder_file_examples? [y|n]")
             if r != "y":
                 sys.exit()
+            self.loadPreviousExamples()
         else:
             print("File with trainExamples found. Loading it...")
             with open(examplesFile, "rb") as f:
@@ -251,3 +251,20 @@ class Coach():
 
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
+
+    def loadPreviousExamples(self):
+        examplesFile = os.path.join(
+            self.config.load_folder_file_examples[0],
+            self.config.load_folder_file_examples[1]) + ".examples"
+        if not os.path.isfile(examplesFile):
+            print(f'File "{examplesFile}" with trainExamples not found!')
+            r = input("Continue? [y|n]")
+            if r != "y":
+                sys.exit()
+        else:
+            print("File with trainExamples for previous model found. Loading it...")
+            with open(examplesFile, "rb") as f:
+                self.trainExamplesHistory = Unpickler(f).load()
+            print('Loading done!')
+
+            # do not skip first play since only old data and not from latest model

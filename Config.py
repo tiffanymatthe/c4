@@ -21,11 +21,12 @@ class Config():
 
         self.arenaCompare = 40
         self.updateThreshold = 0.6
-        self.load_folder_file = ('./temp', 'checkpoint_15.pth.tar')
-        self.iterationNum = 16
+        self.load_folder_file = ('./temp', 'checkpoint_17.pth.tar')
+        self.load_folder_file_examples = ('./temp', 'checkpoint_16.pth.tar')
+        self.iterationNum = 18
         self.load_model = True
         self.numItersForTrainExamplesHistory = 20
 
-        self.multiprocessing = False
-        self.processes = 4
+        self.multiprocessing = True
+        self.processes = 3
 
