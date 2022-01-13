@@ -174,7 +174,7 @@ class Coach():
             # more multiprocessing, not efficient in beginning but for most of it yes because
             # neural network takes longer and longer to fit.
             pwins, nwins, draws = arena.playGames(
-                self.config.arenaCompare, config=self.config)
+                self.config.arenaCompare)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                   (nwins, pwins, draws))
