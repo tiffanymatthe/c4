@@ -23,9 +23,9 @@ class Config():
         self.updateThreshold = 0.6
         self.load_folder_file = ('./temp', 'checkpoint_15.pth.tar')
         self.iterationNum = 16
-        self.load_model = True
+        self.load_model = False
         self.numItersForTrainExamplesHistory = 20
 
-        self.multiprocessing = False
+        self.multiprocessing = True
         self.processes = 4
 
