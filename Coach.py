@@ -123,9 +123,6 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-        pool = None
-        if not self.skipFirstSelfPlay and self.config.multiprocessing:
-            iterationTrainExamples, pool = self.generateTrainingDataAsync()
 
         startingIndex = 1
         if self.config.iterationNum is not None:
@@ -138,7 +135,7 @@ class Coach():
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > startingIndex:
                 if self.config.multiprocessing:
-                    # data is already generating, just need to wait until it is done
+                    iterationTrainExamples, pool = self.generateTrainingDataAsync()
                     pool.close()
                     pool.join()
                 else:
@@ -167,10 +164,6 @@ class Coach():
             self.pnet.load_checkpoint(
                 folder=self.config.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(self.game, self.pnet, self.config)
-
-            if self.config.multiprocessing and i < self.config.numIters:
-                # start generating data for next iteration
-                iterationTrainExamples, pool = self.generateTrainingDataAsync()
 
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.config)
@@ -222,8 +215,7 @@ class Coach():
             iterationTrainExamples += result
             pbar.update()
 
-        # leave one for network training
-        pool = Pool(self.config.processes - 1)
+        pool = Pool(self.config.processes)
         for _ in range(self.config.numEps):
             pool.apply_async(executeEpisodeProcess, callback=update)
 

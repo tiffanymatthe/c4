@@ -7,7 +7,6 @@ from Config import Config
 from Game import Game
 import numpy as np
 from Board import Board
-from tqdm.keras import TqdmCallback
 
 
 class NeuralNet():
@@ -39,8 +38,7 @@ class NeuralNet():
         target_vs = np.asarray(target_vs)
 
         self.nnet.model.fit(x=input_boards, y=[target_pis, target_vs],
-                            batch_size=self.config.batch_size, epochs=self.config.epochs,
-                            verbose=0, callbacks=[TqdmCallback(verbose=2, desc="Training")])
+                            batch_size=self.config.batch_size, epochs=self.config.epochs)
 
     def predict(self, board: Board):
         """
