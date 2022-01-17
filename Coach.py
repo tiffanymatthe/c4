@@ -123,10 +123,6 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-        if not self.skipFirstSelfPlay and self.config.multiprocessing:
-            print("Starting initial training data generation.")
-            iterationTrainExamples, pool = self.generateTrainingDataAsync()
-
         startingIndex = 1
         if self.config.iterationNum is not None:
             startingIndex = min(self.config.iterationNum, self.config.numIters + 1)
@@ -135,9 +131,9 @@ class Coach():
             # bookkeeping
             print(f'Starting Iter #{i} ...')
             # examples of the iteration
-            if not self.skipFirstSelfPlay or i > 1:
+            if not self.skipFirstSelfPlay or i > startingIndex:
                 if self.config.multiprocessing:
-                    # data is already generating, just need to wait until it is done
+                    iterationTrainExamples, pool = self.generateTrainingDataAsync()
                     pool.close()
                     pool.join()
                 else:
@@ -167,11 +163,6 @@ class Coach():
                 folder=self.config.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(self.game, self.pnet, self.config)
 
-            if self.config.multiprocessing and i < self.config.numIters:
-                # start generating data for next iteration
-                print("Starting training data generation for next iteration.")
-                iterationTrainExamples, pool = self.generateTrainingDataAsync()
-
             self.nnet.train(trainExamples)
             nmcts = MCTS(self.game, self.nnet, self.config)
 
@@ -180,8 +171,7 @@ class Coach():
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             # more multiprocessing, not efficient in beginning but for most of it yes because
             # neural network takes longer and longer to fit.
-            pwins, nwins, draws = arena.playGames(
-                self.config.arenaCompare, config=self.config)
+            pwins, nwins, draws = arena.playGames(self.config.arenaCompare)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' %
                   (nwins, pwins, draws))
@@ -213,19 +203,18 @@ class Coach():
         iterationTrainExamples = deque(
             [], maxlen=self.config.maxlenOfQueue)
 
-        if self.config.multiprocessing:
-            pbar = tqdm(total=self.config.numEps,
-                        desc="Self Play", position=0, leave=True)
+        print("Starting multiprocessing.")
+        pbar = tqdm(total=self.config.numEps,
+                    desc="Self Play", position=0, leave=True)
 
-            def update(result):
-                nonlocal iterationTrainExamples
-                iterationTrainExamples += result
-                pbar.update()
+        def update(result):
+            nonlocal iterationTrainExamples
+            iterationTrainExamples += result
+            pbar.update()
 
-            # leave one for network training
-            pool = Pool(self.config.processes - 1)
-            for _ in range(self.config.numEps):
-                pool.apply_async(executeEpisodeProcess, callback=update)
+        pool = Pool(self.config.processes)
+        for _ in range(self.config.numEps):
+            pool.apply_async(executeEpisodeProcess, callback=update)
 
         return iterationTrainExamples, pool
 
@@ -248,9 +237,10 @@ class Coach():
         examplesFile = modelFile + ".examples"
         if not os.path.isfile(examplesFile):
             print(f'File "{examplesFile}" with trainExamples not found!')
-            r = input("Continue? [y|n]")
+            r = input("Try with self.load_folder_file_examples? [y|n]")
             if r != "y":
                 sys.exit()
+            self.loadPreviousExamples()
         else:
             print("File with trainExamples found. Loading it...")
             with open(examplesFile, "rb") as f:
@@ -259,3 +249,20 @@ class Coach():
 
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
+
+    def loadPreviousExamples(self):
+        examplesFile = os.path.join(
+            self.config.load_folder_file_examples[0],
+            self.config.load_folder_file_examples[1]) + ".examples"
+        if not os.path.isfile(examplesFile):
+            print(f'File "{examplesFile}" with trainExamples not found!')
+            r = input("Continue? [y|n]")
+            if r != "y":
+                sys.exit()
+        else:
+            print("File with trainExamples for previous model found. Loading it...")
+            with open(examplesFile, "rb") as f:
+                self.trainExamplesHistory = Unpickler(f).load()
+            print('Loading done!')
+
+            # do not skip first play since only old data and not from latest model

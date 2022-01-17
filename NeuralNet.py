@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import warnings
+warnings.filterwarnings("ignore")
 import os
 from C4Model import C4Model
 from Config import Config
@@ -34,6 +36,7 @@ class NeuralNet():
         input_boards = np.asarray(input_boards)
         target_pis = np.asarray(target_pis)
         target_vs = np.asarray(target_vs)
+
         self.nnet.model.fit(x=input_boards, y=[target_pis, target_vs],
                             batch_size=self.config.batch_size, epochs=self.config.epochs)
 

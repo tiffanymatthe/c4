@@ -3,6 +3,8 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import warnings
+warnings.filterwarnings("ignore")
 from tensorflow.keras import Input
 from tensorflow.keras.models import *
 from tensorflow.keras.layers import *
