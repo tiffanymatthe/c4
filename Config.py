@@ -6,7 +6,7 @@ class Config():
         self.cpuct = 2.5 # 1
 
         self.numEps = 100
-        self.numIters = 32
+        self.numIters = 40
         self.maxlenOfQueue = 200000
 
         self.num_channels = 128
@@ -21,9 +21,9 @@ class Config():
 
         self.arenaCompare = 40
         self.updateThreshold = 0.6
-        self.load_folder_file = ('./temp', 'checkpoint_30.pth.tar')
-        self.load_folder_file_examples = ('./temp', 'checkpoint_30.pth.tar')
-        self.iterationNum = 31
+        self.load_folder_file = ('./temp', 'checkpoint_32.pth.tar')
+        self.load_folder_file_examples = ('./temp', 'checkpoint_31.pth.tar')
+        self.iterationNum = 33
         self.load_model = True
         self.numItersForTrainExamplesHistory = 20
 

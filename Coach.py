@@ -123,7 +123,6 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-
         startingIndex = 1
         if self.config.iterationNum is not None:
             startingIndex = min(self.config.iterationNum, self.config.numIters + 1)
