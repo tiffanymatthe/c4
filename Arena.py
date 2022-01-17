@@ -58,7 +58,7 @@ class Arena():
             self.display(board)
         return curPlayer * self.game.getWinState(board, curPlayer)
 
-    def playGames(self, num, verbose=False):
+    def playGames(self, num, verbose=False, disable_progress=False):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
@@ -74,7 +74,7 @@ class Arena():
         twoWon = 0
         draws = 0
 
-        for _ in tqdm(range(num), desc="Arena.playGames (1)"):
+        for _ in tqdm(range(num), desc="Arena.playGames (1)", disable=disable_progress):
             gameResult = self.playGame(verbose=verbose)
             if gameResult == 1:
                 oneWon += 1
@@ -85,7 +85,7 @@ class Arena():
 
         self.player1, self.player2 = self.player2, self.player1
         
-        for _ in tqdm(range(num), desc="Arena.playGames (2)"):
+        for _ in tqdm(range(num), desc="Arena.playGames (2)", disable=disable_progress):
             gameResult = self.playGame(verbose=verbose)
             if gameResult == -1:
                 oneWon += 1
