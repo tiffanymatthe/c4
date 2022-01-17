@@ -124,15 +124,15 @@ class Coach():
         only if it wins >= updateThreshold fraction of games.
         """
         if not self.skipFirstSelfPlay and self.config.multiprocessing:
+            print("Starting initial training data generation.")
             iterationTrainExamples, pool = self.generateTrainingDataAsync()
 
         startingIndex = 1
-        if self.config.checkpoint is not None:
+        if self.config.iterationNum is not None:
             startingIndex = min(self.config.iterationNum, self.config.numIters + 1)
 
         for i in range(startingIndex, self.config.numIters + 1):
             # bookkeeping
-
             print(f'Starting Iter #{i} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
@@ -169,6 +169,7 @@ class Coach():
 
             if self.config.multiprocessing and i < self.config.numIters:
                 # start generating data for next iteration
+                print("Starting training data generation for next iteration.")
                 iterationTrainExamples, pool = self.generateTrainingDataAsync()
 
             self.nnet.train(trainExamples)
@@ -213,7 +214,6 @@ class Coach():
             [], maxlen=self.config.maxlenOfQueue)
 
         if self.config.multiprocessing:
-            print("Starting multiprocessing.")
             pbar = tqdm(total=self.config.numEps,
                         desc="Self Play", position=0, leave=True)
 
